@@ -201,6 +201,17 @@ public final class EventTest {
         assertJsonEquals("{\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"foo\":{\"0\":{\"baz\":1}},\"@version\":\"1\"}", e.toJson());
     }
 
+	@Test
+    public void testDeepMapFieldToJsonIntegerArray() throws Exception {
+        Event e = new Event();
+        e.setField("[foo][bar][baz]", 1);
+        assertJsonEquals("{\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"foo\":{\"bar\":{\"baz\":1}},\"@version\":\"1\"}", e.toJson());
+
+        e = new Event();
+        e.setField("[foo][0][baz]", 1);
+        assertJsonEquals("{\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"foo\":{\"0\":{\"baz\":1}},\"@version\":\"1\"}", e.toJson());
+    }
+
     @Test
     public void testTimestampFieldToJson() throws Exception {
         Event e = new Event();
@@ -268,6 +279,50 @@ public final class EventTest {
         Event f = e.clone();
 
         assertJsonEquals("{\"bar\":\"bar\",\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"array\":[{\"foo\":\"bar\"}],\"foo\":1.0,\"@version\":\"1\",\"baz\":1}", f.toJson());
+        assertJsonEquals(f.toJson(), e.toJson());
+    }
+	
+	//CS 427 Issue 13105: https://github.com/elastic/logstash/issues/13105
+	@Test
+    public void testArrayEmpty() throws Exception {
+        Map<String, Object> data = new HashMap<>();
+
+        List<Object> l = new ArrayList<>();
+        data.put("array", l);
+
+        data.put("foo", 1.0);
+        data.put("bar", "bar");
+        data.put("baz", 1);
+
+        Event e = new Event(data);
+
+        Event f = e.clone();
+
+        assertJsonEquals("{\"bar\":\"bar\",\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"array\":[],\"foo\":1.0,\"@version\":\"1\",\"baz\":1}", f.toJson());
+        assertJsonEquals(f.toJson(), e.toJson());
+    }
+	
+	//CS 427 Issue 13105: https://github.com/elastic/logstash/issues/13105
+	@Test
+    public void testArrayEmptyMap() throws Exception {
+        Map<String, Object> data = new HashMap<>();
+
+        List<Object> l = new ArrayList<>();
+        data.put("array", l);
+
+        Map<String, Object> m = new HashMap<>();
+        //m.put("foo", "bar");
+        l.add(m);
+
+        data.put("foo", 1.0);
+        data.put("bar", "bar");
+        data.put("baz", 1);
+
+        Event e = new Event(data);
+
+        Event f = e.clone();
+
+        assertJsonEquals("{\"bar\":\"bar\",\"@timestamp\":\"" + e.getTimestamp().toString() + "\",\"array\":[{}],\"foo\":1.0,\"@version\":\"1\",\"baz\":1}", f.toJson());
         assertJsonEquals(f.toJson(), e.toJson());
     }
 
